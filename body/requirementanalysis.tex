@@ -3,28 +3,68 @@
 
 \section{Stakeholder Analysis}
 \label{section:stakeholder-analysis}
-<TIP: List your stakeholders for your project here/>
 
-Stakeholders are individuals, groups, or entities that
-have an interest, concern, or stake in a particular project, decision,
-organization, or system. These are individuals or groups who can affect or be
-affected by the outcomes of your project.
+The Prometheus project involves multiple parties that influence or are affected by the system's deployment. Identifying these stakeholders ensures that both the technical AI requirements and the business-end objectives are met.
 
+\begin{itemize}
+    \item \textbf{Gym Members (Primary Users):} Individual athletes and gym patrons who utilize the facility. They are the primary consumers of the real-time occupancy data and progress tracking features. Their main interest is minimizing workout friction and maximizing time efficiency.
+    \item \textbf{Gym Owners and Facility Managers (Secondary Users):} Business operators who require data-driven insights to optimize equipment placement and facility layout. They utilize the web dashboard for spatial analytics and ROI assessments.
+    \item \textbf{Product Owner:} The individual responsible for the strategic vision of the Prometheus ecosystem. They ensure that the system remains compliant with data privacy regulations (PDPA/GDPR) and that the AI capabilities align with the intended problem domain.
+    \item \textbf{Data Science/AI Developers:} Technical stakeholders responsible for the development, training, and maintenance of the YOLO models and the edge-to-cloud pipeline.
+\end{itemize}
 
 \section{User Stories and Use Cases}
 \label{section:user-stories-use-cases}
-<TIP: For each stakeholder, write user stories that capture what
-they need from the system: "As a [stakeholder], I want to [action] so that [benefit]."
-For your most important user stories, expand them into use cases.
-A use case is a detailed description of how a system
-interacts with an external entity (such as a user or another system) to
-accomplish a specific goal. Use cases provide a high-level view of the
-functionality of a system and help in capturing and documenting its
-requirements from the perspective of end users.
 
-Make sure to use the
-appropriate type of use case for each scenario (brief, casual, and fully-dressed
-use case). />
+\subsection{User Stories}
+The following user stories define the core functional requirements from the perspective of the key stakeholders:
+
+\begin{itemize}
+    \item \textbf{Gym Member:} "As a gym member, I want to see real-time machine occupancy via my mobile app so that I can plan my sets without waiting for equipment."
+    \item \textbf{Gym Member:} "As a gym member, I want to receive an AI-generated workout routine based on currently available machines so that I can have a continuous, uninterrupted workout session."
+    \item \textbf{Gym Owner:} "As a gym owner, I want to view a spatial heatmap of my facility so that I can identify 'dead zones' and relocate underutilized equipment to maximize my floor space value."
+    \item \textbf{Gym Owner:} "As a gym owner, I want to access historical utilization reports so that I can make informed decisions about purchasing new equipment based on actual demand."
+    \item \textbf{Product Owner:} "As a product owner, I want to ensure all raw video data is processed locally at the edge so that the system maintains member privacy and remains compliant with regional data protection laws."
+\end{itemize}
+
+\subsection{Use Cases}
+
+The following use cases detail the interaction between the users and the Prometheus system.
+
+\subsubsection{Use Case 1: View Real-Time Machine Occupancy (Brief)}
+\textbf{Actor:} Gym Member \\
+\textbf{Goal:} To determine if specific equipment is available before moving to that station. \\
+\textbf{Description:} The member opens the Prometheus iOS application. The system retrieves the current occupancy metadata from the cloud database and displays a visual map of the gym floor. Machines are color-coded (e.g., Green for Free, Red for Occupied). The member identifies an available bench and proceeds with their workout.
+
+\subsubsection{Use Case 2: Analyze Facility Utilization Trends (Casual)}
+\textbf{Actor:} Gym Owner \\
+\textbf{Goal:} To identify peak usage times and equipment popularity for business optimization. \\
+\textbf{Main Success Scenario:}
+The owner logs into the web dashboard and selects a date range for analysis. The system aggregates the historical metadata and generates a spatial heatmap and a line graph showing utilization trends. The owner observes that the power racks are consistently at 100\% capacity during 5:00 PM - 8:00 PM, while the stationary bikes are underutilized. Based on this, the owner decides to replace two bikes with an additional power rack.
+
+\subsubsection{Use Case 3: Detect and Update Machine State (Fully-Dressed)}
+\textbf{Primary Actor:} Edge Processing Unit (System Actor) \\
+\textbf{Stakeholders and Interests:}
+\begin{itemize}
+    \item \textbf{Gym Member:} Needs accurate, low-latency updates to avoid "false availability" readings.
+    \item \textbf{Gym Owner:} Needs reliable data for long-term analytics.
+\end{itemize}
+\textbf{Preconditions:} The CCTV cameras are active and streaming via RTSP to the local edge hardware. The YOLO model is loaded and initialized. \\
+\textbf{Main Success Scenario:}
+\begin{enumerate}
+    \item The Edge Processing Unit receives a video frame from the gym floor.
+    \item The YOLO model detects a "Person" class and a "Bench Press" class within the defined Region of Interest (ROI).
+    \item The occupancy logic detects a significant spatial overlap between the person and the machine.
+    \item The system monitors this overlap for a continuous 5-second buffer (Temporal Smoothing).
+    \item The Edge Unit extracts the "Occupied" state and the Machine ID, then discards the raw video frame.
+    \item The metadata is transmitted to the cloud database.
+    \item The cloud database triggers a WebSocket update to all active iOS clients, turning the machine icon red.
+\end{enumerate}
+\textbf{Extensions (Alternative Flows):}
+\begin{itemize}
+    \item \textbf{3a. Occlusion detected:} If a person walks between the camera and the machine without using it, the temporal buffer (Step 4) prevents a false "Occupied" trigger.
+    \item \textbf{5a. Network Failure:} If the edge unit cannot reach the cloud, it stores the metadata locally and syncs once the connection is restored to ensure analytics accuracy.
+\end{itemize}
 
 \section{Use Case Diagrams}
 \label{section:use-case-diagrams}
